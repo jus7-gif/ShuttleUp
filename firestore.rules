@@ -1,0 +1,96 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {uid}
+// Fields:
+//   - uid: string (required)
+//   - name: string (required, 1-100 chars)
+//   - email: string (required, valid email)
+//   - level: string (Anfänger, Fortgeschritten, Profi)
+//   - discipline: string (Einzel, Doppel, Beides)
+//   - goals: list (strings)
+//   - xp: number (>= 0)
+//   - level_rank: number (>= 1)
+//   - completedWorkouts: number (>= 0)
+//   - context: string (optional)
+//   - partnerName: string (optional)
+//   - focusArea: string (Technik, Ausdauer, Beinarbeit, Kraft, Taktik, Allround)
+//   - gameResults: list (objects)
+//   - currentPlan: object (optional)
+//   - badges: list (objects)
+//   - unlockedRewards: list (strings)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUserProfile(data) {
+      let requiredFields = ['uid', 'name', 'email', 'level', 'discipline', 'xp', 'level_rank', 'completedWorkouts', 'focusArea', 'gameResults', 'badges', 'unlockedRewards'];
+      return data.keys().hasAll(requiredFields) &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             isValidEmail(data.email) &&
+             data.level in ['Anfänger', 'Fortgeschritten', 'Profi'] &&
+             data.discipline in ['Einzel', 'Doppel', 'Beides'] &&
+             data.xp is number && data.xp >= 0 &&
+             data.level_rank is number && data.level_rank >= 1 &&
+             data.completedWorkouts is number && data.completedWorkouts >= 0 &&
+             data.focusArea in ['Technik', 'Ausdauer', 'Beinarbeit', 'Kraft', 'Taktik', 'Allround'] &&
+             data.gameResults is list &&
+             data.badges is list &&
+             data.unlockedRewards is list;
+    }
+
+    function isDuelParticipant(duelData) {
+      return isAuthenticated() && (request.auth.uid == duelData.player1Id || request.auth.uid == duelData.player2Id);
+    }
+
+    function isValidDuel(data) {
+      return data.keys().hasAll(['player1Id', 'player1Name', 'player2Id', 'player2Name', 'scores', 'winnerId', 'status', 'createdAt']) &&
+             data.player1Id is string &&
+             data.player1Name is string &&
+             data.player2Id is string &&
+             data.player2Name is string &&
+             data.scores is list &&
+             data.status in ['active', 'finished'] &&
+             data.createdAt is string;
+    }
+
+    match /users/{userId} {
+      // Allow reading basic profile info for searching, but protect sensitive fields
+      allow read: if isAuthenticated(); 
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow delete: if isOwner(userId);
+    }
+
+    match /duels/{duelId} {
+      allow read: if isDuelParticipant(resource.data);
+      allow create: if isAuthenticated() && 
+                    request.resource.data.player1Id == request.auth.uid &&
+                    isValidDuel(request.resource.data);
+      allow update: if isDuelParticipant(resource.data) && 
+                    isValidDuel(request.resource.data);
+    }
+  }
+}

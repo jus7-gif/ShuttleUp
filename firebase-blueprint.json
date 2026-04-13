@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user training progress, preferences, and game history.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "level": { "type": "string", "enum": ["Anfänger", "Fortgeschritten", "Profi"] },
+        "discipline": { "type": "string", "enum": ["Einzel", "Doppel", "Beides"] },
+        "goals": { "type": "array", "items": { "type": "string" } },
+        "xp": { "type": "number" },
+        "level_rank": { "type": "number" },
+        "completedWorkouts": { "type": "number" },
+        "context": { "type": "string" },
+        "partnerName": { "type": "string" },
+        "focusArea": { "type": "string", "enum": ["Technik", "Ausdauer", "Beinarbeit", "Kraft", "Taktik", "Allround"] },
+        "gameResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "date": { "type": "string" },
+              "opponent": { "type": "string" },
+              "score": { "type": "string" },
+              "won": { "type": "boolean" },
+              "notes": { "type": "string" },
+              "discipline": { "type": "string" }
+            }
+          }
+        },
+        "currentPlan": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "totalDuration": { "type": "number" },
+            "exercises": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "instructions": { "type": "string" },
+                  "duration": { "type": "number" },
+                  "xpReward": { "type": "number" },
+                  "category": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "badges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "icon": { "type": "string" },
+              "unlockedAt": { "type": "string" }
+            }
+          }
+        },
+        "unlockedRewards": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "personalDetails": {
+          "type": "object",
+          "properties": {
+            "favoritePlayer": { "type": "string" },
+            "playingStyle": { "type": "string" },
+            "racketModel": { "type": "string" },
+            "clubName": { "type": "string" }
+          }
+        },
+        "videoAnalyses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "date": { "type": "string" },
+              "videoUrl": { "type": "string" },
+              "feedback": { "type": "string" },
+              "suggestedExercises": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "required": ["uid", "name", "email", "level", "discipline", "xp", "level_rank", "completedWorkouts", "focusArea", "gameResults", "badges", "unlockedRewards", "videoAnalyses"]
+    },
+    "Duel": {
+      "title": "Duel",
+      "description": "A match between two players.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "player1Id": { "type": "string" },
+        "player1Name": { "type": "string" },
+        "player2Id": { "type": "string" },
+        "player2Name": { "type": "string" },
+        "scores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "p1": { "type": "number" },
+              "p2": { "type": "number" }
+            }
+          }
+        },
+        "winnerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "finished"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "player1Id", "player1Name", "player2Id", "player2Name", "scores", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "/duels/{duelId}": {
+      "schema": "Duel",
+      "description": "Duel document"
+    }
+  }
+}
